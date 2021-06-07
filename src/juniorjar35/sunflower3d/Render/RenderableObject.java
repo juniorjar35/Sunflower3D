@@ -1,0 +1,107 @@
+package juniorjar35.sunflower3d.Render;
+
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL30;
+import org.lwjgl.system.MemoryUtil;
+
+public class RenderableObject {
+	
+	private FloatBuffer verts, tc, normals, color;
+	private IntBuffer indices;
+	private boolean init = false;
+	boolean useTextures = false;
+	int vao, vbo, ibo, tbo, cbo, nbo, il, texture;
+	
+	
+	
+	
+	
+	public RenderableObject(float[] verts, int[] indices, float[] textureCoords, float[] colors, float[] normals) {
+		
+		this(FloatBuffer.wrap(verts), IntBuffer.wrap(indices), FloatBuffer.wrap(textureCoords), FloatBuffer.wrap(colors), FloatBuffer.wrap(normals));
+		
+	}
+	
+	public RenderableObject(FloatBuffer verts, IntBuffer indices, FloatBuffer textureCoords, FloatBuffer colors, FloatBuffer normals) {
+		this.verts = MemoryUtil.memAllocFloat(verts.capacity());
+		this.verts.put(verts).flip();
+		this.indices = MemoryUtil.memAllocInt(indices.capacity());
+		this.indices.put(indices).flip();
+		this.tc = MemoryUtil.memAllocFloat(textureCoords.capacity());
+		this.tc.put(textureCoords).flip();
+		this.color = MemoryUtil.memAllocFloat(colors.capacity());
+		this.color.put(colors);
+		this.normals = MemoryUtil.memAllocFloat(normals.capacity());
+		this.normals.put(normals);
+	}
+	
+	private int data(FloatBuffer buffer, int size, int index) {
+		if (!buffer.isDirect()) return -1;
+		int rbuffer = GL15.glGenBuffers();
+		
+		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, rbuffer);
+		GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buffer, GL15.GL_STATIC_DRAW);
+		GL20.glVertexAttribPointer(index, size, GL11.GL_FLOAT, false, 0, 0);
+		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+		MemoryUtil.memFree(buffer);
+		return rbuffer;
+	}
+	
+	public void texture(int texture) {
+		if (texture <= 0) {
+			texture = 0;
+			this.useTextures = false;
+		}
+		if (!GL11.glIsTexture(texture)) throw new RuntimeException("Not a texture!");
+		this.texture = texture;
+		this.useTextures = true;
+	}
+	
+	public boolean initialized() {
+		return init;
+	}
+	
+	public void init() {
+		if (init) return;
+		vao = GL30.glGenVertexArrays();
+		GL30.glBindVertexArray(vao);
+		
+		vbo = data(verts, 3, 0); // Vertex buffer
+		verts = null;
+		
+		il = indices.capacity();
+		ibo = GL15.glGenBuffers(); // IBO
+				 GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, ibo);
+				 GL15.glBufferData(GL15.GL_ARRAY_BUFFER, indices, GL15.GL_STATIC_DRAW);
+				 GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+		MemoryUtil.memFree(indices);
+		indices = null;
+		
+		tbo = data(tc, 2, 1); // Texture buffer;
+		
+		cbo = data(color, 3, 2); // Color buffer
+		
+		nbo = data(normals, 3, 3); // Normals buffer
+		
+		GL30.glBindVertexArray(0);
+		this.init = true;
+	}
+	
+	public void delete() {
+		if (this.init) {
+			GL30.glDeleteVertexArrays(vao);
+			GL30.glDeleteBuffers(vbo);
+			GL30.glDeleteBuffers(ibo);
+			GL30.glDeleteBuffers(tbo);
+			GL30.glDeleteBuffers(cbo);
+			GL30.glDeleteBuffers(nbo);
+			this.init = false;
+		}
+	}
+	
+}
