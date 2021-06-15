@@ -1,5 +1,6 @@
 package juniorjar35.sunflower3d.Utils;
 
+import java.util.Objects;
 import java.util.Random;
 
 public class Maths {
@@ -20,5 +21,13 @@ public class Maths {
 		percent = 100 - percent;
 		int number = rangedRandom(0, 100);
 		return number >= percent;
+	}
+	
+	public static void setSeed(long seed) {
+		RANDOM.setSeed(seed);
+	}
+	
+	public static void setRandom(Random random) {
+		RANDOM = Objects.requireNonNull(random);
 	}
 }
