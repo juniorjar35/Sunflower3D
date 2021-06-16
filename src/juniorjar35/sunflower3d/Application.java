@@ -44,7 +44,7 @@ public final class Application {
 	
 	public static void setAppName(String name) {
 		Objects.requireNonNull(name);
-		if (name.length() >= 0) throw new IllegalArgumentException("Name length");
+		if (name.length() <= 0) throw new IllegalArgumentException("Name length");
 		APPNAME = name;
 	}
 	
