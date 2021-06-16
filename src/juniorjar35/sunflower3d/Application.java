@@ -88,7 +88,8 @@ public final class Application {
 			File crashReport = new File(crashes, "CrashReport-[" + getTimeFileSafe() + "].log");
 			BufferedWriter writer = new BufferedWriter(new FileWriter(crashReport));
 			
-			writer.write("Crash report. Date: " + getTime() + "\n\n");
+			writer.write("Crash report. Date: " + getTime() + "\n");
+			writer.write("Library: " + getLibraryInfo());
 			writer.write("Crash cause: " + cause.toString() + "\n");
 			writer.flush();
 			for (StackTraceElement ste : cause.getStackTrace()) {
