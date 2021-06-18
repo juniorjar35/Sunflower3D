@@ -12,7 +12,7 @@ public class PNG implements ImageDecoder {
 	private ByteBuffer data;
 	
 	@Override
-	public void close() throws Exception {
+	public void close() throws IOException {
 		if (init) STBImage.stbi_image_free(data);
 	}
 
@@ -37,7 +37,8 @@ public class PNG implements ImageDecoder {
 	}
 	@Override
 	public void decode(ByteBuffer buffer) throws IOException {
-		if (!buffer.isDirect()) throw new IOException("Image buffer is not direct!");
+		if (init) close();
+		if (!buffer.isDirect()) throw new IOException("Image buffer is not a direct buffer!");
 		int[] w = new int[1], h = new int[1], c = new int[1];
 		if(!STBImage.stbi_info_from_memory(buffer, w, h, c)) { 
 			throw new IOException("Image decoding failed: " + STBImage.stbi_failure_reason());
@@ -48,5 +49,5 @@ public class PNG implements ImageDecoder {
 		this.h = h[0];
 		this.init = true;
 	}
-
+	
 }

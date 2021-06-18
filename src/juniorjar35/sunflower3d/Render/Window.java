@@ -26,6 +26,7 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.Callback;
 
+import juniorjar35.sunflower3d.Utils.MainThreadScheduler;
 import juniorjar35.sunflower3d.Utils.OpenGLUtils;
 import juniorjar35.sunflower3d.Utils.Timer;
 
@@ -102,9 +103,9 @@ public class Window {
 			throw new RuntimeException("Failed to initialized GLFW!");
 		}
 		
-		GLFW.glfwDefaultWindowHints();
 		GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
 		GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3);
+		GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
 		
 		window = GLFW.glfwCreateWindow(size.x, size.y, title, 0, 0);
 		
@@ -117,7 +118,6 @@ public class Window {
 			throw new IllegalStateException("OpenGL 3.3 is not supported!");
 		}
 		
-		
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		GL11.glDepthFunc(GL11.GL_LESS);
 		GL11.glDepthMask(true);
@@ -125,7 +125,6 @@ public class Window {
 		GL11.glCullFace(GL11.GL_BACK);
 		
 		GLFWVidMode mode = GLFW.glfwGetVideoMode(GLFW.glfwGetPrimaryMonitor());
-		
 		this.pos.x = (mode.width() - size.x) / 2;
 		this.pos.y = (mode.height() - size.y) / 2;
 		
@@ -268,6 +267,10 @@ public class Window {
 		return this.vsync;
 	}
 	
+	public boolean isCreated() {
+		return this.created;
+	}
+	
 	public Vector2i getSize() {
 		return new Vector2i(size);
 	}
@@ -329,6 +332,7 @@ public class Window {
 			}
 		}
 		this.camera.update();
+		MainThreadScheduler.executeTasks();
 	}
 	
 	public void render() {

@@ -1,16 +1,24 @@
 package juniorjar35.sunflower3d;
 
+import java.awt.Desktop;
+import java.awt.Toolkit;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import javax.swing.JOptionPane;
+
 import org.lwjgl.system.Platform;
+
+import juniorjar35.sunflower3d.Audio.SoundManager;
 
 public final class Application {
 	
@@ -81,15 +89,14 @@ public final class Application {
 	
 	public static void stop(Throwable cause) {
 		Objects.requireNonNull(cause);
-		
+		SoundManager.close();
 		try {
 			File crashes = new File(getSavesDirectory(),"crashes");
 			if (!crashes.exists() || !crashes.isDirectory()) crashes.mkdir();
 			File crashReport = new File(crashes, "CrashReport-[" + getTimeFileSafe() + "].log");
 			BufferedWriter writer = new BufferedWriter(new FileWriter(crashReport));
-			
 			writer.write("Crash report. Date: " + getTime() + "\n");
-			writer.write("Library: " + getLibraryInfo());
+			writer.write("Library: " + getLibraryInfo() + "\n");
 			writer.write("Crash cause: " + cause.toString() + "\n");
 			writer.flush();
 			for (StackTraceElement ste : cause.getStackTrace()) {
@@ -101,23 +108,49 @@ public final class Application {
 			writer.newLine();
 			writer.write("------------------------------------\n");
 			writer.flush();
-			try {
+			
 				for (CrashReportDetail crd : DETAILS) {
-					for (String string : crd.call()) {
-						writer.write(string);
-						writer.newLine();
-					}
+					try {
+						for (String string : crd.call()) {
+							writer.write(string);
+							writer.newLine();
+						}
+					} catch(Exception e) {
+						writer.write("Failed to retrive details for this section!\n");
+						writer.flush();
+					};
 					writer.write("------------------------------------\n");
 					writer.flush();
 				}
-			} catch(Exception e) {};
+			
 			
 			writer.flush();
 			writer.close();
+			System.err.println("--------------GAME CRASH--------------");
+			System.err.println("Crash report at: " + crashReport.getAbsolutePath());
+			System.err.print("Crash cause: ");
+			cause.printStackTrace(System.err);
+			System.err.println("--------------GAME CRASH--------------");
+			beep();
+			if(JOptionPane.showConfirmDialog(null, "The game has crashed! Would you like to open the crash report", "Game crash", JOptionPane.YES_NO_OPTION, JOptionPane.ERROR_MESSAGE) == JOptionPane.YES_OPTION) {
+				openFile(crashReport);
+			}
 			forceExit(-1);
 		} catch (IOException e) {
 		}
 		
+	}
+	
+	public static void openFile(File file) throws IOException {
+		Desktop.getDesktop().open(file);
+	}
+	
+	public static void openURL(URL url) throws IOException, URISyntaxException {
+		Desktop.getDesktop().browse(url.toURI());
+	}
+	
+	public static void beep() {
+		Toolkit.getDefaultToolkit().beep();
 	}
 	
 	public static String getTime() {

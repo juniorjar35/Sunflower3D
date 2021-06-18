@@ -12,9 +12,10 @@ import org.lwjgl.openal.AL10;
 import org.lwjgl.openal.AL11;
 import org.lwjgl.openal.ALC;
 import org.lwjgl.openal.ALC10;
-import org.lwjgl.openal.ALC11;
 import org.lwjgl.openal.ALCCapabilities;
 import org.lwjgl.openal.ALCapabilities;
+import org.lwjgl.openal.EnumerateAllExt;
+import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 
 import juniorjar35.sunflower3d.Render.Camera;
@@ -27,21 +28,21 @@ public final class SoundManager {
 	protected static List<SoundFile> SOUNDFILES = new CopyOnWriteArrayList<SoundFile>();
 	private static List<Integer> SOURCES = new CopyOnWriteArrayList<Integer>();
 	
-	private static FloatBuffer orientation = null;
+	private static ALCCapabilities ALCC = null;
+	private static ALCapabilities C_AL = null;
 	
-	public static void openDevice(String device) {
+	public static void openDevice(String audioDevice) {
 		if (INIT) close();
-		if (device == null) device = ALC10.alcGetString(0, ALC10.ALC_DEFAULT_DEVICE_SPECIFIER);
-		DEVICE = ALC10.alcOpenDevice(device);
-		if (DEVICE == 0L) throw new IllegalArgumentException("Unable to find \"" + device + "\" output device!");
+		if (audioDevice == null) audioDevice = ALC10.alcGetString(0, ALC10.ALC_DEFAULT_DEVICE_SPECIFIER);
+		DEVICE = ALC10.alcOpenDevice(audioDevice);
+		if (DEVICE == 0L) throw new IllegalArgumentException("Unable to find \"" + audioDevice + "\" output device!");
 		CONTEXT = ALC10.alcCreateContext(DEVICE, (int[]) null);
 		ALC10.alcMakeContextCurrent(CONTEXT);
-		ALCCapabilities alc = ALC.createCapabilities(DEVICE);
-		ALCapabilities cap = AL.createCapabilities(alc);
+		ALCC = ALC.createCapabilities(DEVICE); 
+		C_AL = AL.createCapabilities(ALCC);
 		
-		if (!alc.OpenALC11) throw new IllegalStateException("ALC 1.1 is not supported!");
-		if (!cap.OpenAL11) throw new IllegalStateException("AL 1.1 is not supported!");
-		orientation = MemoryUtil.memAllocFloat(6);
+		if (!ALCC.OpenALC11) throw new IllegalStateException("ALC 1.1 is not supported!");
+		if (!C_AL.OpenAL11) throw new IllegalStateException("AL 1.1 is not supported!");
 		
 		INIT = true;
 	}
@@ -49,8 +50,6 @@ public final class SoundManager {
 	public static void close() {
 		if (!INIT) return;
 		stopAllSounds();
-		MemoryUtil.memFree(orientation);
-		orientation = null;
 		ALC10.alcDestroyContext(CONTEXT);
 		CONTEXT = 0;
 		ALC10.alcCloseDevice(DEVICE);
@@ -126,21 +125,25 @@ public final class SoundManager {
 		
 		view.transformDirection(at);
 		view.transformDirection(up);
-		
-		orientation.put(0, at.x);
-		orientation.put(1, at.y);
-		orientation.put(2, at.z);
-		
-		orientation.put(3, up.x);
-		orientation.put(4, up.y);
-		orientation.put(5, up.z);
-		
-		AL10.alListener3f(AL10.AL_POSITION, pos.x, pos.y, pos.z);
-		AL10.alListenerfv(AL10.AL_ORIENTATION, orientation);
+		try (MemoryStack stack = MemoryStack.stackPush()) {
+			
+			FloatBuffer orientation = stack.mallocFloat(6);
+			
+			orientation.put(0, at.x);
+			orientation.put(1, at.y);
+			orientation.put(2, at.z);
+			orientation.put(3, up.x);
+			orientation.put(4, up.y);
+			orientation.put(5, up.z);
+			
+			AL10.alListener3f(AL10.AL_POSITION, pos.x, pos.y, pos.z);
+			AL10.alListenerfv(AL10.AL_ORIENTATION, orientation);
+		}
 	}
 	
 	public static String[] getAllOutputDevices() {
-		long address = AL10.nalGetString(ALC11.ALC_ALL_DEVICES_SPECIFIER);
+		if (ALCC.ALC_ENUMERATE_ALL_EXT) throw new IllegalStateException("ALC_ENUMERATE_ALL_EXT extension is not present!");
+		long address = AL10.nalGetString(EnumerateAllExt.ALC_ALL_DEVICES_SPECIFIER);
 		ByteBuffer buffer = MemoryUtil.memByteBufferNT2(address);
 		byte[] bytes = new byte[buffer.capacity()];
 		buffer.get(bytes);

@@ -6,6 +6,8 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
+import juniorjar35.sunflower3d.Audio.SoundManager;
+
 public class Camera {
 	
 	Vector3f pos, rot;
@@ -68,11 +70,10 @@ public class Camera {
 		if (window.isKeyDown(GLFW.GLFW_KEY_SPACE)) 		this.pos.add( 0,  speed, 0 );
 		if (window.isKeyDown(GLFW.GLFW_KEY_LEFT_SHIFT)) this.pos.add( 0, -speed, 0 );
 		
-		
 		rot.sub((float) (ny - oy) * sensitivity,(float) (nx - ox) * sensitivity, 0 );
 		ox = nx;
 		oy = ny;
-		
+		SoundManager.listenerData(this);
 	}
 
 	public float getSpeed() {

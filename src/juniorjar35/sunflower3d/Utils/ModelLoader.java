@@ -38,8 +38,6 @@ public final class ModelLoader {
 				normals[i * 3 + 2] = norm.z();
 			}
 		}
-		vertxs.free();
-		norms.free();
 		
 		int faceCount = mesh.mNumFaces();
 		AIFace.Buffer ind = mesh.mFaces();
@@ -50,15 +48,13 @@ public final class ModelLoader {
 			indices[i * 3 + 1] = face.mIndices().get(1);
 			indices[i * 3 + 2] = face.mIndices().get(2);
 		}
-		ind.free();
-		mesh.free();
 		Assimp.aiFreeScene(ref);
-		RenderableObject object = new RenderableObject(verts, indices, texs, new float[0], normals);
+		RenderableObject object = new RenderableObject(verts, indices, texs, normals);
 		return object;
 	}
 	
 	public static RenderableObject loadResource(String resource, String extension) throws IOException {
-		AIScene ref = Assimp.aiImportFileFromMemory(ResourceUtils.loadBufferDirect(resource), Assimp.aiProcess_Triangulate | Assimp.aiProcess_JoinIdenticalVertices, extension);
+		AIScene ref = Assimp.aiImportFileFromMemory(ResourceUtils.loadBufferDirect(resource), Assimp.aiProcess_Triangulate | Assimp.aiProcess_JoinIdenticalVertices | Assimp.aiProcess_FixInfacingNormals, extension);
 		return load(ref);
 	}
 	
@@ -67,7 +63,7 @@ public final class ModelLoader {
 	}
 	
 	public static RenderableObject loadFile(String path) {
-		AIScene ref = Assimp.aiImportFile(path, Assimp.aiProcess_Triangulate | Assimp.aiProcess_JoinIdenticalVertices);
+		AIScene ref = Assimp.aiImportFile(path, Assimp.aiProcess_Triangulate | Assimp.aiProcess_JoinIdenticalVertices | Assimp.aiProcess_FixInfacingNormals);
 		return load(ref);
 	}
 	

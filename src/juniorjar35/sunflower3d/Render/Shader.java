@@ -2,6 +2,8 @@ package juniorjar35.sunflower3d.Render;
 
 import java.io.IOException;
 import java.nio.FloatBuffer;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
@@ -21,6 +23,8 @@ public class Shader {
 	
 	private final String vertexCode;
 	private final String fragmentCode;
+	
+	private Map<String, Integer> uniforms = new HashMap<String, Integer>();
 	
 	private boolean c = false;
 	
@@ -71,43 +75,39 @@ public class Shader {
 		return this.c;
 	}
 	
-	int getUniformLocation(String name) {
+	void findUniform(String name) {
 		int i = GL20.glGetUniformLocation(programId,name);
 		if (i == -1) {
 			throw new RuntimeException(name + " is not a valid uniform name!");
 		}
-		return i;
+		uniforms.put(name, i);
 	}
 	
 	void setUniformFloat(String name, float v) {
-		GL20.glUniform1f(this.getUniformLocation(name), v);
+		GL20.glUniform1f(uniforms.get(name), v);
 	}
 	
 	void setUniformInteger(String name, int v) {
-		GL20.glUniform1i(this.getUniformLocation(name), v);
-	}
-	
-	void setUniformBoolean(String name, boolean v) {
-		GL20.glUniform1i(this.getUniformLocation(name), v ? 1 : 0);
+		GL20.glUniform1i(uniforms.get(name), v);
 	}
 	
 	void setUniformVector2f(String name, Vector2f v) {
-		GL20.glUniform2f(this.getUniformLocation(name), v.x, v.y);
+		GL20.glUniform2f(uniforms.get(name), v.x, v.y);
 	}
 	
 	void setUniformVector3f(String name, Vector3f v) {
-		GL20.glUniform3f(this.getUniformLocation(name), v.x, v.y, v.z);
+		GL20.glUniform3f(uniforms.get(name), v.x, v.y, v.z);
 	}
 	
 	void setUniformVector4f(String name, Vector4f v) {
-		GL20.glUniform4f(this.getUniformLocation(name), v.x, v.y, v.x, v.w);
+		GL20.glUniform4f(uniforms.get(name), v.x, v.y, v.x, v.w);
 	}
 	
 	void setUniformMatrix4f(String name, Matrix4f v) {
 		try (MemoryStack stack = MemoryStack.stackPush()) {
 	        FloatBuffer buffer = stack.mallocFloat(16);
 	        v.get(buffer);
-	        GL20.glUniformMatrix4fv(getUniformLocation(name), false, buffer);
+	        GL20.glUniformMatrix4fv(uniforms.get(name), false, buffer);
 	    }
 	}
 	

@@ -62,10 +62,11 @@ public class SoundProperties {
 		this.looped = looped;
 	}
 
-	public SoundProperties(Vector3f position, Vector3f velocity, float gain, boolean looped) {
+	public SoundProperties(Vector3f position, Vector3f velocity, float gain,float pitch, boolean looped) {
 		this.pos = Objects.requireNonNull(position);
 		this.vel = Objects.requireNonNull(velocity);
 		this.gain = gain;
+		this.pitch = pitch;
 		this.looped = looped;
 	}
 	

@@ -3,6 +3,8 @@ package juniorjar35.sunflower3d.Utils;
 import java.util.Objects;
 import java.util.Random;
 
+import org.joml.Vector3f;
+
 public class Maths {
 	private Maths() {};
 	
@@ -14,6 +16,17 @@ public class Maths {
 	
 	public static int clamp(int value, int min, int max) {
 		return Math.max(min, Math.min(max, value));
+	}
+	
+	public static float clamp(float value, float min, float max) {
+		return Math.max(min, Math.min(max, value));
+	}
+	
+	public static Vector3f clampVector3f(Vector3f value, Vector3f min, Vector3f max) {
+		value.x = Maths.clamp(value.x, min.x, max.x);
+		value.y = Maths.clamp(value.y, min.y, max.y);
+		value.z = Maths.clamp(value.z, min.z, max.z);
+		return value;
 	}
 	
 	public static boolean chance(int percent) {
