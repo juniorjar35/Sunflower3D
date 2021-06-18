@@ -29,7 +29,7 @@ public final class Application {
 	private static String APPNAME = "Sunflower3D";
 	
 	public static String getLibraryInfo() {
-		return "Sunflower3D 1.0";
+		return "Sunflower3D 1.3";
 	}
 	
 	public static File getUserdataDirectory() {
