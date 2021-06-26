@@ -67,8 +67,7 @@ public class OGG implements AudioDecoder {
 
 	@Override
 	public void close() throws Exception {
-		
-		if (init) {MemoryUtil.memFree(pcm);System.out.println("Closed");}
+		if (init) MemoryUtil.memFree(pcm);
 	}
 
 	@Override
