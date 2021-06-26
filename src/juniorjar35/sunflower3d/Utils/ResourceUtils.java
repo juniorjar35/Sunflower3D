@@ -9,8 +9,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Objects;
@@ -23,8 +24,16 @@ public final class ResourceUtils {
 	private static ResourceLoader LOADER = new ResourceLoader() {
 		
 		@Override
-		public InputStream load(String resource) {
-			return ResourceUtils.class.getResourceAsStream(resource);
+		public InputStream load(String resource) throws IOException {
+			
+			if (isFileReadable(resource)) {
+				System.out.println("Loading from file system! File: " + resource);
+				return new FileInputStream(resource);
+			} else {
+				System.out.println("Loading from resources! Resource: " + resource);
+				return ResourceUtils.class.getResourceAsStream(resource);
+			}
+			
 		}
 	};
 	
@@ -58,7 +67,7 @@ public final class ResourceUtils {
 	}
 	
 	public static interface ResourceLoader {
-		InputStream load(String resource);
+		InputStream load(String resource) throws IOException;
 	}
 	
 	private ResourceUtils() { throw new UnsupportedOperationException(); };
@@ -67,7 +76,7 @@ public final class ResourceUtils {
 		LOADER = Objects.requireNonNull(loader);
 	}
 	
-	public static InputStream loadStream(String resource) {
+	public static InputStream loadStream(String resource) throws IOException {
 		return LOADER.load(resource);
 	}
 	
@@ -90,48 +99,58 @@ public final class ResourceUtils {
 	
 	public static ByteBuffer loadBuffer(String resource) throws IOException {
 		ByteBuffer result = null;
-		
-		if (isFileReadable(resource)) {
-			try(SeekableByteChannel sbc = Files.newByteChannel(Paths.get(resource))){
-				result = BufferUtils.createByteBuffer((int) (sbc.size() + 1));
-				while(sbc.read(result) != -1);
-			}
-		} else {
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			InputStream is = LOADER.load(resource);
-			byte[] a = new byte[4096];
-			int x;
-			while((x = is.read(a)) != -1) {
-				baos.write(a, 0, x);
-			}
-			byte[] w = baos.toByteArray();
-			result = BufferUtils.createByteBuffer(w.length);
-			result.put(w);
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		InputStream is = LOADER.load(resource);
+		byte[] a = new byte[4096];
+		int x;
+		while((x = is.read(a)) != -1) {
+			baos.write(a, 0, x);
 		}
+		byte[] w = baos.toByteArray();
+		result = BufferUtils.createByteBuffer(w.length);
+		result.put(w);
 		result.flip();
 		return result.slice();
 	}
 	
+	public static FloatBuffer getFloatBuffer(FloatBuffer buffer) {
+		FloatBuffer out = MemoryUtil.memAllocFloat(buffer.capacity());
+		out.put(buffer).flip();
+		
+		return out;
+	}
+	
+	public static FloatBuffer getFloatBuffer(float[] array) {
+		FloatBuffer buffer = MemoryUtil.memAllocFloat(array.length);
+		buffer.put(array).flip();
+		return buffer;
+	}
+	
+	public static IntBuffer getIntBuffer(IntBuffer buffer) {
+		IntBuffer out = MemoryUtil.memAllocInt(buffer.capacity());
+		out.put(buffer).flip();
+		
+		return out;
+	}
+	
+	public static IntBuffer getIntBuffer(int[] array) {
+		IntBuffer buffer = MemoryUtil.memAllocInt(array.length);
+		buffer.put(array).flip();
+		return buffer;
+	}
 	
 	public static ByteBuffer loadBufferDirect(String resource) throws IOException {
 		ByteBuffer result = null;
-		if (isFileReadable(resource)) {
-			try(SeekableByteChannel sbc = Files.newByteChannel(Paths.get(resource))){
-				result = MemoryUtil.memAlloc((int) (sbc.size() + 1));
-				while(sbc.read(result) != -1);
-			}
-		} else {
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			InputStream is = LOADER.load(resource);
-			byte[] a = new byte[4096];
-			int x;
-			while((x = is.read(a)) != -1) {
-				baos.write(a, 0, x);
-			}
-			byte[] w = baos.toByteArray();
-			result = MemoryUtil.memAlloc(w.length);
-			result.put(w);
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		InputStream is = LOADER.load(resource);
+		byte[] a = new byte[4096];
+		int x;
+		while((x = is.read(a)) != -1) {
+			baos.write(a, 0, x);
 		}
+		byte[] w = baos.toByteArray();
+		result = MemoryUtil.memAlloc(w.length);
+		result.put(w);
 		result.flip();
 		return result;
 	}
@@ -152,6 +171,14 @@ public final class ResourceUtils {
 		ReadableByteChannel rbc = fis.getChannel();
 		ByteBuffer buffer = BufferUtils.createByteBuffer(fis.available());
 		rbc.read(buffer);
+		fis.close();
+		return buffer;
+	}
+	
+	public static ByteBuffer loadFileBufferDirect(File file) throws IOException {
+		FileInputStream fis = new FileInputStream(file);
+		ByteBuffer buffer = MemoryUtil.memAlloc(fis.available());
+		fis.getChannel().read(buffer);
 		fis.close();
 		return buffer;
 	}
