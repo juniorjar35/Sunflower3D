@@ -29,7 +29,7 @@ public final class Application {
 	private static String APPNAME = "Sunflower3D";
 	
 	public static String getLibraryInfo() {
-		return "Sunflower3D 1.3";
+		return "Sunflower3D 1.4.1";
 	}
 	
 	public static File getUserdataDirectory() {
@@ -74,6 +74,11 @@ public final class Application {
 		DETAILS.add(Objects.requireNonNull(crd));
 	}
 	
+	public static boolean is64bit() {
+		String arch = System.getProperty("os.arch");
+		return arch.contains("64") || arch.startsWith("armv8");
+	}
+	
 	private static void causedBy(BufferedWriter writer, Throwable cause) throws IOException {
 		if (cause.getCause() != null) {
 			Throwable cb = cause.getCause();
@@ -97,6 +102,10 @@ public final class Application {
 			BufferedWriter writer = new BufferedWriter(new FileWriter(crashReport));
 			writer.write("Crash report. Date: " + getTime() + "\n");
 			writer.write("Library: " + getLibraryInfo() + "\n");
+			writer.write("OS: " + System.getProperty("os.name") + " (" + (is64bit() ? "64-bit" : "32-bit") + ")\n");
+			writer.write("Java version: " + System.getProperty("java.version") + "\n");
+			writer.write("Java vendor: " + System.getProperty("java.vendor") + "\n");
+			writer.write(""  + "\n");
 			writer.write("Crash cause: " + cause.toString() + "\n");
 			writer.flush();
 			for (StackTraceElement ste : cause.getStackTrace()) {
@@ -109,19 +118,19 @@ public final class Application {
 			writer.write("------------------------------------\n");
 			writer.flush();
 			
-				for (CrashReportDetail crd : DETAILS) {
-					try {
-						for (String string : crd.call()) {
-							writer.write(string);
-							writer.newLine();
-						}
-					} catch(Exception e) {
-						writer.write("Failed to retrive details for this section!\n");
-						writer.flush();
-					};
-					writer.write("------------------------------------\n");
+			for (CrashReportDetail crd : DETAILS) {
+				try {
+					for (String string : crd.call()) {
+						writer.write(string);
+						writer.newLine();
+					}
+				} catch(Exception e) {
+					writer.write("Failed to retrive details for this section!\n");
 					writer.flush();
-				}
+				};
+				writer.write("------------------------------------\n");
+				writer.flush();
+			}
 			
 			
 			writer.flush();

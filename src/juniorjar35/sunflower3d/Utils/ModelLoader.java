@@ -1,12 +1,14 @@
 package juniorjar35.sunflower3d.Utils;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 import org.lwjgl.assimp.AIFace;
 import org.lwjgl.assimp.AIMesh;
 import org.lwjgl.assimp.AIScene;
 import org.lwjgl.assimp.AIVector3D;
 import org.lwjgl.assimp.Assimp;
+import org.lwjgl.system.MemoryUtil;
 
 import juniorjar35.sunflower3d.Render.RenderableObject;
 
@@ -54,7 +56,9 @@ public final class ModelLoader {
 	}
 	
 	public static RenderableObject loadResource(String resource, String extension) throws IOException {
-		AIScene ref = Assimp.aiImportFileFromMemory(ResourceUtils.loadBufferDirect(resource), Assimp.aiProcess_Triangulate | Assimp.aiProcess_JoinIdenticalVertices | Assimp.aiProcess_FixInfacingNormals, extension);
+		ByteBuffer buffer = ResourceUtils.loadBufferDirect(resource);
+		AIScene ref = Assimp.aiImportFileFromMemory(buffer, Assimp.aiProcess_Triangulate | Assimp.aiProcess_JoinIdenticalVertices | Assimp.aiProcess_FixInfacingNormals, extension);
+		MemoryUtil.memFree(buffer);
 		return load(ref);
 	}
 	

@@ -30,14 +30,13 @@ public class OGG implements AudioDecoder {
 			
 			if (length < 0) throw new IOException("Negative length!");
 			
-
-			
 			this.pcm = MemoryUtil.memAlloc(length);
 			
 			STBVorbis.stb_vorbis_get_samples_short_interleaved(decoder, channels, pcm.asShortBuffer());
 			
 			STBVorbis.stb_vorbis_close(decoder);
 			MemoryUtil.memFree(error);
+			MemoryUtil.memFree(buffer);
 			
 			this.chnl = info.channels();
 			this.rate = info.sample_rate();
@@ -68,7 +67,8 @@ public class OGG implements AudioDecoder {
 
 	@Override
 	public void close() throws Exception {
-		if (init) MemoryUtil.memFree(pcm);
+		
+		if (init) {MemoryUtil.memFree(pcm);System.out.println("Closed");}
 	}
 
 	@Override
