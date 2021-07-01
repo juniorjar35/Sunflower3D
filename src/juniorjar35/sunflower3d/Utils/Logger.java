@@ -21,13 +21,13 @@ public class Logger {
 	public static DebugPrintStream DEBUG = null;
 	public static DebugPrintStream WARN = null;
 	
-	public static void setFile(File file) throws IOException {
+	public static void setLogFile(File file) throws IOException {
 		Objects.requireNonNull(file);
 		if (logWriter != null) throw new IllegalStateException("Log file already set!");
 		logWriter = new BufferedWriter(new FileWriter(file));
 	}
 	
-	public static void override() {
+	public static void override() throws IOException {
 		System.setOut(new DebugPrintStream(new BufferedOutputStream(new OutputStream() {
 
 			@Override
@@ -38,7 +38,7 @@ public class Logger {
 				log(new String(b, off,len));
 			}
 			
-		},128),true));
+		},128),true,System.getProperty("sun.stdout.encoding")));
 		
 		System.setErr(new DebugPrintStream(new BufferedOutputStream(new OutputStream() {
 
@@ -50,7 +50,7 @@ public class Logger {
 				error(new String(b,off,len));
 			}
 			
-		},128),true));
+		},128),true,System.getProperty("sun.stdout.encoding")));
 		
 		
 		DEBUG = (new DebugPrintStream(new BufferedOutputStream(new OutputStream() {
@@ -63,7 +63,7 @@ public class Logger {
 				debug(new String(b,off,len));
 			}
 			
-		},128),true));
+		},128),true,System.getProperty("sun.stdout.encoding")));
 		
 		WARN = (new DebugPrintStream(new BufferedOutputStream(new OutputStream() {
 
@@ -75,7 +75,7 @@ public class Logger {
 				warn(new String(b,off,len));
 			}
 			
-		},128),true));
+		},128),true,System.getProperty("sun.stdout.encoding")));
 		
 	}
 	
