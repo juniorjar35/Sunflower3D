@@ -38,7 +38,7 @@ public class Logger {
 				log(new String(b, off,len));
 			}
 			
-		},128),true,System.getProperty("sun.stdout.encoding")));
+		},128),true));
 		
 		System.setErr(new DebugPrintStream(new BufferedOutputStream(new OutputStream() {
 
@@ -50,7 +50,7 @@ public class Logger {
 				error(new String(b,off,len));
 			}
 			
-		},128),true,System.getProperty("sun.stdout.encoding")));
+		},128),true));
 		
 		
 		DEBUG = (new DebugPrintStream(new BufferedOutputStream(new OutputStream() {
@@ -63,7 +63,7 @@ public class Logger {
 				debug(new String(b,off,len));
 			}
 			
-		},128),true,System.getProperty("sun.stdout.encoding")));
+		},128),true));
 		
 		WARN = (new DebugPrintStream(new BufferedOutputStream(new OutputStream() {
 
@@ -75,14 +75,13 @@ public class Logger {
 				warn(new String(b,off,len));
 			}
 			
-		},128),true,System.getProperty("sun.stdout.encoding")));
+		},128),true));
 		
 	}
 	
 	private static void writeFile(String f) {
 		if (logWriter != null) {
 			try {
-				
 				logWriter.write(f);
 				logWriter.newLine();
 				logWriter.flush();
