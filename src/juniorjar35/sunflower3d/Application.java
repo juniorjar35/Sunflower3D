@@ -120,6 +120,11 @@ public final class Application {
 			writer.write("Java version: " + System.getProperty("java.version") + "\n");
 			writer.write("Java vendor: " + System.getProperty("java.vendor") + "\n");
 			writer.write("\n");
+			writer.write("Cores available: " + Runtime.getRuntime().availableProcessors() + "\n");
+			writer.write("Free JVM memory: " + (Runtime.getRuntime().freeMemory() / 1024) / 1024 + " MB\n");
+			writer.write("Max JVM memory: " + (Runtime.getRuntime().maxMemory() / 1024) / 1024 + " MB\n");
+			writer.write("Total JVM memory: " + (Runtime.getRuntime().totalMemory() / 1024) / 1024 + " MB\n");
+			writer.write("\n");
 			writer.write("OpenGL Renderer: " + (GPU != null ? GPU[0] : "NULL") + "\n");
 			writer.write("OpenGL Vendor: " + (GPU != null ? GPU[1] : "NULL") + "\n");
 			writer.write("OpenGL Version: " + (GPU != null ? GPU[2] : "NULL") + "\n");
