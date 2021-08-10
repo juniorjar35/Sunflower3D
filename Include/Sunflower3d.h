@@ -9,19 +9,70 @@ extern "C" {
 #endif
 /*
  * Class:     juniorjar35_sunflower3d_Utils_Utils
- * Method:    getCpuBrandString0
- * Signature: ()Ljava/lang/String;
+ * Method:    RDRAND160
+ * Signature: ()S
  */
-JNIEXPORT jstring JNICALL Java_juniorjar35_sunflower3d_Utils_Utils_getCpuBrandString0
+JNIEXPORT jshort JNICALL Java_juniorjar35_sunflower3d_Utils_Utils_RDRAND160
   (JNIEnv *, jclass);
 
 /*
  * Class:     juniorjar35_sunflower3d_Utils_Utils
- * Method:    getCpuVendorString0
- * Signature: ()Ljava/lang/String;
+ * Method:    RDSEED160
+ * Signature: (S)V
  */
-JNIEXPORT jstring JNICALL Java_juniorjar35_sunflower3d_Utils_Utils_getCpuVendorString0
+JNIEXPORT void JNICALL Java_juniorjar35_sunflower3d_Utils_Utils_RDSEED160
+  (JNIEnv *, jclass, jshort);
+
+/*
+ * Class:     juniorjar35_sunflower3d_Utils_Utils
+ * Method:    RDRAND320
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_juniorjar35_sunflower3d_Utils_Utils_RDRAND320
   (JNIEnv *, jclass);
+
+/*
+ * Class:     juniorjar35_sunflower3d_Utils_Utils
+ * Method:    RDSEED320
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_juniorjar35_sunflower3d_Utils_Utils_RDSEED320
+  (JNIEnv *, jclass, jint);
+
+/*
+ * Class:     juniorjar35_sunflower3d_Utils_Utils
+ * Method:    RDRAND640
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_juniorjar35_sunflower3d_Utils_Utils_RDRAND640
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     juniorjar35_sunflower3d_Utils_Utils
+ * Method:    RDSEED640
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_juniorjar35_sunflower3d_Utils_Utils_RDSEED640
+  (JNIEnv *, jclass, jlong);
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+/* Header for class juniorjar35_sunflower3d_Utils_CpuInfo */
+
+#ifndef _Included_juniorjar35_sunflower3d_Utils_CpuInfo
+#define _Included_juniorjar35_sunflower3d_Utils_CpuInfo
+#ifdef __cplusplus
+extern "C" {
+#endif
+/*
+ * Class:     juniorjar35_sunflower3d_Utils_CpuInfo
+ * Method:    retrieveDetails0
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_juniorjar35_sunflower3d_Utils_CpuInfo_retrieveDetails0
+  (JNIEnv *, jobject);
 
 #ifdef __cplusplus
 }
