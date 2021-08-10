@@ -197,6 +197,9 @@ JNIEXPORT void JNICALL Java_juniorjar35_sunflower3d_Utils_CpuInfo_retrieveDetail
 	env->SetBooleanField(object, jsha, sha ? JNI_TRUE : JNI_FALSE);
 	env->SetBooleanField(object, jprefetchwt1, prefetchwt1 ? JNI_TRUE : JNI_FALSE);
 
+	std::string v(vendor);
+	std::transform(v.begin(), v.end(), v.begin(), [](unsigned char c) {return std::tolower(c);});
+
 	int cores = std::thread::hardware_concurrency();
 	
 	SYSTEM_INFO sysinfo;
@@ -225,11 +228,25 @@ bool isRDRAND()
 	return (regs[ECX] & RDRAND_ECX_1) == RDRAND_ECX_1;
 }
 
+bool isRDSEED()
+{
+	uint32_t regs[4] = { 0 };
+	__cpuid((int*)regs, 7);
+	return (regs[EBX] & RDSEED_EBX_7) == RDSEED_EBX_7;
+}
+
 void Java_exception_RDRAND(JNIEnv* env) 
 {
 	jclass clazz = env->FindClass("java/lang/UnsupportedOperationException");
-	env->ThrowNew(clazz, "RDRAND and RDSEED are not supported by CPU!");
+	env->ThrowNew(clazz, "RDRAND is not supported by CPU!");
 }
+
+void Java_exception_RDSEED(JNIEnv* env)
+{
+	jclass clazz = env->FindClass("java/lang/UnsupportedOperationException");
+	env->ThrowNew(clazz, "RDSEED is not supported by CPU!");
+}
+
 
 JNIEXPORT jshort JNICALL Java_juniorjar35_sunflower3d_Utils_Utils_RDRAND160(JNIEnv* env, jclass) 
 {
@@ -244,8 +261,8 @@ JNIEXPORT jshort JNICALL Java_juniorjar35_sunflower3d_Utils_Utils_RDRAND160(JNIE
 
 JNIEXPORT void JNICALL Java_juniorjar35_sunflower3d_Utils_Utils_RDSEED160(JNIEnv* env, jclass, jshort seed) 
 {
-	if (!isRDRAND()) {
-		Java_exception_RDRAND(env);
+	if (!isRDSEED()) {
+		Java_exception_RDSEED(env);
 		return;
 	}
 	_rdseed16_step((uint16_t*) &seed);
@@ -264,7 +281,7 @@ JNIEXPORT jint JNICALL Java_juniorjar35_sunflower3d_Utils_Utils_RDRAND320(JNIEnv
 
 JNIEXPORT void JNICALL Java_juniorjar35_sunflower3d_Utils_Utils_RDSEED320(JNIEnv* env, jclass, jint seed) 
 {
-	if (!isRDRAND()) {
+	if (!isRDSEED()) {
 		Java_exception_RDRAND(env);
 		return;
 	}
@@ -289,7 +306,7 @@ JNIEXPORT jlong JNICALL Java_juniorjar35_sunflower3d_Utils_Utils_RDRAND640(JNIEn
 JNIEXPORT void JNICALL Java_juniorjar35_sunflower3d_Utils_Utils_RDSEED640(JNIEnv* env, jclass cls, jlong seed) 
 {
 #ifdef _M_AMD64 || _M_X64
-	if (!isRDRAND()) {
+	if (!isRDSEED()) {
 		Java_exception_RDRAND(env);
 		return;
 	}
