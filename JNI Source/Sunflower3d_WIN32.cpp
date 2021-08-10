@@ -197,9 +197,6 @@ JNIEXPORT void JNICALL Java_juniorjar35_sunflower3d_Utils_CpuInfo_retrieveDetail
 	env->SetBooleanField(object, jsha, sha ? JNI_TRUE : JNI_FALSE);
 	env->SetBooleanField(object, jprefetchwt1, prefetchwt1 ? JNI_TRUE : JNI_FALSE);
 
-	std::string v(vendor);
-	std::transform(v.begin(), v.end(), v.begin(), [](unsigned char c) {return std::tolower(c);});
-
 	int cores = std::thread::hardware_concurrency();
 	
 	SYSTEM_INFO sysinfo;
