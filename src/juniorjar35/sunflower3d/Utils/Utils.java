@@ -5,72 +5,11 @@ import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import org.lwjgl.system.Library;
-
 public final class Utils {
 	
-	private static boolean LIBLOADED = false;
 	private static final char[] HEX = "0123456789ABCDEF".toCharArray();
 	
 	private Utils() { };
-	
-	static {
-		try {
-			Library.loadSystem("juniorjar35.sunflower3d.Utils.Utils", "Sunflower3d");
-			LIBLOADED = true;
-		} catch(Error e) {
-			Logger.error(e.toString());
-		};
-	}
-	
-	public static void loadNativeLibrary() { }
-	
-	public static boolean Sunflower3DLibLoaded() {
-		return LIBLOADED;
-	}
-	
-	public static void checkIfLoaded() {
-		if (!LIBLOADED) throw new IllegalStateException("Sunflower3d library not loaded!");
-	}
-	
-	private static native short RDRAND160();
-	private static native void RDSEED160(short seed);
-	private static native int RDRAND320();
-	private static native void RDSEED320(int seed);
-	private static native long RDRAND640();
-	private static native void RDSEED640(long seed);
-	
-	public static long RDRAND64() {
-		checkIfLoaded();
-		return RDRAND640();
-	}
-	
-	public static void RDSEED64(long seed) {
-		checkIfLoaded();
-		RDSEED640(seed);
-	}
-	
-	public static int RDRAND32() {
-		checkIfLoaded();
-		return RDRAND320();
-	}
-	
-	public static void RDSEED32(int seed) {
-		checkIfLoaded();
-		RDSEED320(seed);
-	}
-	
-	public static short RDRAND16() {
-		checkIfLoaded();
-		return RDRAND160();
-	}
-	
-	public static void RDSEED16(short seed) {
-		checkIfLoaded();
-		RDSEED160(seed);
-	}
-	
-	
 	
 	public static boolean isMainThread() {
 		return (Thread.currentThread().getId() == 1);
