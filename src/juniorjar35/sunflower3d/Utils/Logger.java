@@ -14,12 +14,34 @@ import java.util.Objects;
 import juniorjar35.sunflower3d.Application;
 
 public class Logger {
+	
 	private static BufferedWriter logWriter = null;
 	private static final PrintStream STDOUT = new PrintStream(new BufferedOutputStream(new FileOutputStream(FileDescriptor.out),128),true);
 	private static final PrintStream STDERR = new PrintStream(new BufferedOutputStream(new FileOutputStream(FileDescriptor.err),128),true);
 	
-	public static DebugPrintStream DEBUG = null;
-	public static DebugPrintStream WARN = null;
+	public static DebugPrintStream DEBUG = (new DebugPrintStream(new BufferedOutputStream(new OutputStream() {
+
+		@Override
+		public void write(int b) throws IOException {}
+		
+		@Override
+		public void write(byte[] b, int off, int len) throws IOException {
+			debug(new String(b,off,len));
+		}
+		
+	},128),true));
+	
+	public static DebugPrintStream WARN = (new DebugPrintStream(new BufferedOutputStream(new OutputStream() {
+
+		@Override
+		public void write(int b) throws IOException {}
+		
+		@Override
+		public void write(byte[] b, int off, int len) throws IOException {
+			warn(new String(b,off,len));
+		}
+		
+	},128),true));
 	
 	public static void setLogFile(File file) throws IOException {
 		Objects.requireNonNull(file);
@@ -51,32 +73,6 @@ public class Logger {
 			}
 			
 		},128),true));
-		
-		
-		DEBUG = (new DebugPrintStream(new BufferedOutputStream(new OutputStream() {
-
-			@Override
-			public void write(int b) throws IOException {}
-			
-			@Override
-			public void write(byte[] b, int off, int len) throws IOException {
-				debug(new String(b,off,len));
-			}
-			
-		},128),true));
-		
-		WARN = (new DebugPrintStream(new BufferedOutputStream(new OutputStream() {
-
-			@Override
-			public void write(int b) throws IOException {}
-			
-			@Override
-			public void write(byte[] b, int off, int len) throws IOException {
-				warn(new String(b,off,len));
-			}
-			
-		},128),true));
-		
 	}
 	
 	private static void writeFile(String f) {

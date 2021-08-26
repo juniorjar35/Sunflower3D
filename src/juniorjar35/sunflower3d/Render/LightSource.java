@@ -8,7 +8,7 @@ import juniorjar35.sunflower3d.Utils.Maths;
 
 public class LightSource {
 	
-	Vector3f pos = new Vector3f(), clr = new Vector3f();
+	private Vector3f pos = new Vector3f(0.0f), clr = new Vector3f(1.0f);
 	
 	public LightSource() {};
 	
@@ -31,6 +31,14 @@ public class LightSource {
 	
 	public void setColor(float r, float g, float b) {
 		this.clr.set(r, g, b);
+	}
+	
+	public Vector3f getPosition() {
+		return pos;
+	}
+	
+	public Vector3f getColor() {
+		return clr;
 	}
 	
 }

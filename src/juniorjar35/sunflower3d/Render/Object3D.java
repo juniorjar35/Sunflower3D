@@ -25,7 +25,7 @@ public class Object3D {
 	
 	
 	
-	Matrix4f transform() {
+	public Matrix4f transform() {
 		transformation.identity();
 		transformation.translate(pos);
 		transformation.rotateX((float) Math.toRadians(rot.x));

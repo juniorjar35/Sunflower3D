@@ -1,7 +1,8 @@
-package juniorjar35.sunflower3d.Render;
+ package juniorjar35.sunflower3d.Render;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
@@ -9,21 +10,41 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.joml.Matrix3d;
+import org.joml.Matrix3f;
+import org.joml.Matrix3x2d;
+import org.joml.Matrix3x2f;
+import org.joml.Matrix4d;
 import org.joml.Matrix4f;
+import org.joml.Matrix4x3d;
+import org.joml.Matrix4x3f;
+import org.joml.Vector2d;
 import org.joml.Vector2f;
+import org.joml.Vector2i;
+import org.joml.Vector3d;
 import org.joml.Vector3f;
+import org.joml.Vector3i;
+import org.joml.Vector4d;
 import org.joml.Vector4f;
+import org.joml.Vector4i;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.opengl.ARBShadingLanguageInclude;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL40;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
 
 import juniorjar35.sunflower3d.Utils.Deleteable;
 import juniorjar35.sunflower3d.Utils.OpenGLUtils;
 import juniorjar35.sunflower3d.Utils.ResourceUtils;
 
 public class Shader implements Deleteable {
+	
+	public static interface RenderingCallbacks {
+		void rendering(Shader shader);
+		void cleaningUp(Shader shader);
+	}
 	
 	private int 
 		programId = -1,
@@ -35,6 +56,8 @@ public class Shader implements Deleteable {
 	
 	private Map<String, Integer> uniforms = new HashMap<String, Integer>();
 	private List<String> includes = new ArrayList<String>();
+	
+	private RenderingCallbacks callback = null;
 	
 	private boolean c = false;
 	
@@ -49,15 +72,17 @@ public class Shader implements Deleteable {
 		try (MemoryStack stack = MemoryStack.stackPush()) {
 			String name = resource.charAt(0) != '/' ? '/' + resource : resource;
 			includes.add(name);
-			System.out.println(name);
 			ByteBuffer buffer = stack.malloc(name.length());
 			buffer.put(name.getBytes()).flip();
-			ARBShadingLanguageInclude.glNamedStringARB(ARBShadingLanguageInclude.GL_SHADER_INCLUDE_ARB, buffer, ResourceUtils.loadBufferDirect(resource));
+			ByteBuffer bf = ResourceUtils.loadBufferDirect(resource);
+			ARBShadingLanguageInclude.glNamedStringARB(ARBShadingLanguageInclude.GL_SHADER_INCLUDE_ARB, buffer, bf);
+			MemoryUtil.memFree(bf);
 		}
 	}
 	
 	public void init() {
 		if (c) return;
+		if (!OpenGLUtils.getCapabilities().GL_ARB_shader_objects) throw new IllegalStateException("GL_ARB_shader_objects is not supported!");
 		this.programId = GL20.glCreateProgram();
 		this.vertexId = GL20.glCreateShader(GL20.GL_VERTEX_SHADER);
 		
@@ -110,54 +135,145 @@ public class Shader implements Deleteable {
 		return this.c;
 	}
 	
-	void findUniform(String name) {
+	public void findUniform(String name) {
+		if (!GL20.glIsProgram(programId)) throw new IllegalStateException("Program id (" + programId + ") is not a program!");
 		int i = GL20.glGetUniformLocation(programId,name);
 		if (i == -1) {
 			throw new RuntimeException(name + " is not a valid uniform name!");
 		}
 		uniforms.put(name, i);
-		
 	}
 	
-	void setUniformFloat(String name, float v) {
-		GL20.glUniform1f((int) uniforms.get(name), v);
+	public void setRenderingCallbacks(RenderingCallbacks callback) {
+		this.callback = callback;
 	}
 	
-	void setUniformInteger(String name, int v) {
-		GL20.glUniform1i((int) uniforms.get(name), v);
+	public void rendering() {
+		if (callback != null) callback.rendering(this);
 	}
 	
-	void setUniformVector2f(String name, Vector2f v) {
-		GL20.glUniform2f((int) uniforms.get(name), v.x, v.y);
+	public void clean() {
+		if (callback != null) callback.cleaningUp(this);
 	}
 	
-	void setUniformVector3f(String name, Vector3f v) {
-		GL20.glUniform3f((int) uniforms.get(name), v.x, v.y, v.z);
+	public void setUniformFloat(String name, float v) {
+		GL20.glUniform1f(uniforms.get(name), v);
 	}
 	
-	void setUniformVector4f(String name, Vector4f v) {
-		GL20.glUniform4f((int) uniforms.get(name), v.x, v.y, v.x, v.w);
+	public void setUniformDouble(String name, double v) {
+		GL40.glUniform1d(uniforms.get(name), v);
 	}
 	
-	void setUniformBoolean(String name, boolean v) {
-		GL20.glUniform1i((int) uniforms.get(name), v ? 1 : 0);
+	public void setUniformInteger(String name, int v) {
+		GL20.glUniform1i(uniforms.get(name), v);
 	}
 	
-	void setUniformMatrix4f(String name, Matrix4f v) {
+	public void setUniformVector2f(String name, Vector2f v) {
+		GL20.glUniform2f(uniforms.get(name), v.x, v.y);
+	}
+	
+	public void setUniformVector2d(String name, Vector2d v) {
+		GL40.glUniform2d(uniforms.get(name), v.x, v.y);
+	}
+	
+	public void setUniformVector2i(String name, Vector2i v) {
+		GL20.glUniform2i(uniforms.get(name), v.x, v.y);
+	}
+	
+	public void setUniformVector3f(String name, Vector3f v) {
+		GL20.glUniform3f(uniforms.get(name), v.x, v.y, v.z);
+	}
+	
+	public void setUniformVector3d(String name, Vector3d v) {
+		GL40.glUniform3d(uniforms.get(name), v.x, v.y, v.z);
+	}
+	
+	public void setUniformVector3i(String name, Vector3i v) {
+		GL20.glUniform3i(uniforms.get(name), v.x, v.y, v.z);
+	}
+	
+	public void setUniformVector4f(String name, Vector4f v) {
+		GL20.glUniform4f(uniforms.get(name), v.x, v.y, v.x, v.w);
+	}
+	
+	public void setUniformVector4d(String name, Vector4d v) {
+		GL40.glUniform4d(uniforms.get(name), v.x, v.y, v.z, v.w);
+	}
+	
+	public void setUniformVector4i(String name, Vector4i v) {
+		GL20.glUniform4i(uniforms.get(name), v.x, v.y, v.z, v.w);
+	}
+	
+	public void setUniformMatrix4f(String name, Matrix4f v) {
 		try (MemoryStack stack = MemoryStack.stackPush()) {
-	        FloatBuffer buffer = stack.mallocFloat(16);
+	        FloatBuffer buffer = stack.mallocFloat(4 * 4);
 	        v.get(buffer);
 	        GL20.glUniformMatrix4fv(uniforms.get(name), false, buffer);
 	    }
 	}
 	
+	public void setUniformMatrix4d(String name, Matrix4d v) {
+		try (MemoryStack stack = MemoryStack.stackPush()) {
+	        DoubleBuffer buffer = stack.mallocDouble(4 * 4);
+	        v.get(buffer);
+	        GL40.glUniformMatrix4dv(uniforms.get(name), false, buffer);
+	    }
+	}
 	
-	void start() {
+	public void setUniformMatrix3f(String name, Matrix3f v) {
+		try (MemoryStack stack = MemoryStack.stackPush()) {
+	        FloatBuffer buffer = stack.mallocFloat(3 * 3);
+	        v.get(buffer);
+	        GL20.glUniformMatrix3fv(uniforms.get(name), false, buffer);
+	    }
+	}
+	
+	public void setUniformMatrix3d(String name, Matrix3d v) {
+		try (MemoryStack stack = MemoryStack.stackPush()) {
+	        DoubleBuffer buffer = stack.mallocDouble(3 * 3);
+	        v.get(buffer);
+	        GL40.glUniformMatrix3dv(uniforms.get(name), false, buffer);
+	    }
+	}
+	
+	public void setUniformMatrix3x2f(String name, Matrix3x2f v) {
+		try (MemoryStack stack = MemoryStack.stackPush()) {
+			FloatBuffer buffer = stack.mallocFloat(3 * 2);
+	        v.get(buffer);
+	        GL40.glUniformMatrix3x2fv(uniforms.get(name), false, buffer);
+	    }
+	}
+	
+	public void setUniformMatrix3x2d(String name, Matrix3x2d v) {
+		try (MemoryStack stack = MemoryStack.stackPush()) {
+			DoubleBuffer buffer = stack.mallocDouble(3 * 2);
+	        v.get(buffer);
+	        GL40.glUniformMatrix3x2dv(uniforms.get(name), false, buffer);
+	    }
+	}
+	
+	public void setUniformMatrix4x3f(String name, Matrix4x3f v) {
+		try (MemoryStack stack = MemoryStack.stackPush()) {
+			FloatBuffer buffer = stack.mallocFloat(4 * 3);
+	        v.get(buffer);
+	        GL40.glUniformMatrix4x3fv(uniforms.get(name), false, buffer);
+	    }
+	}
+	
+	public void setUniformMatrix4x3f(String name, Matrix4x3d v) {
+		try (MemoryStack stack = MemoryStack.stackPush()) {
+			DoubleBuffer buffer = stack.mallocDouble(4 * 3);
+	        v.get(buffer);
+	        GL40.glUniformMatrix4x3dv(uniforms.get(name), false, buffer);
+	    }
+	}
+	
+	public void start() {
 		if (this.c) GL20.glUseProgram(programId);
 		
 	}
 	
-	void stop() {
+	public void stop() {
 		if (this.c) GL20.glUseProgram(0);
 	}
 	

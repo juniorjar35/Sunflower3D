@@ -1,5 +1,7 @@
 package juniorjar35.sunflower3d.Audio;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 import org.joml.Vector3f;
@@ -10,18 +12,20 @@ public class SoundProperties {
 	float gain = 1, pitch = 1;
 	boolean looped = false;
 	
+	protected List<SoundObject> objects = new ArrayList<SoundObject>();
+	
 	public Vector3f getPos() {
 		return pos;
 	}
 
 	public void setPosition(Vector3f pos) {
-		this.pos = Objects.requireNonNull(pos);
+		this.pos.set(pos);
+		update();
 	}
 	
 	public void setPosition(float x, float y, float z) {
-		this.pos.x = x;
-		this.pos.y = y;
-		this.pos.z = z;
+		this.pos.set(x,y,z);
+		update();
 	}
 
 	public Vector3f getVelocity() {
@@ -37,13 +41,13 @@ public class SoundProperties {
 	}
 
 	public void setVelocity(Vector3f vel) {
-		this.vel = Objects.requireNonNull(vel);
+		this.vel.set(vel);
+		update();
 	}
 	
 	public void setVelocity(float x, float y, float z) {
-		this.vel.x = x;
-		this.vel.y = y;
-		this.vel.z = z;
+		this.vel.set(x, y, z);
+		update();
 	}
 	
 	public float getGain() {
@@ -52,6 +56,7 @@ public class SoundProperties {
 
 	public void setGain(float gain) {
 		this.gain = gain;
+		update();
 	}
 
 	public boolean isLooped() {
@@ -60,6 +65,7 @@ public class SoundProperties {
 
 	public void setLooped(boolean looped) {
 		this.looped = looped;
+		update();
 	}
 
 	public SoundProperties(Vector3f position, Vector3f velocity, float gain,float pitch, boolean looped) {
@@ -68,6 +74,13 @@ public class SoundProperties {
 		this.gain = gain;
 		this.pitch = pitch;
 		this.looped = looped;
+		update();
+	}
+	
+	private void update() {
+		for (SoundObject obj: objects) {
+			obj.applyProperties();
+		}
 	}
 	
 	public SoundProperties() { };

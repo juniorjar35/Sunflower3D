@@ -8,16 +8,16 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.nio.channels.ReadableByteChannel;
+import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Objects;
 
-import org.lwjgl.BufferUtils;
 import org.lwjgl.system.MemoryUtil;
+
+import juniorjar35.sunflower3d.Image.Decoder.ImageDecoder;
 
 public final class ResourceUtils {
 	
@@ -27,10 +27,10 @@ public final class ResourceUtils {
 		public InputStream load(String resource) throws IOException {
 			
 			if (isFileReadable(resource)) {
-				System.out.println("Loading from file system! File: " + resource);
+				Logger.debug("Loading from file system! File: " + resource);
 				return new FileInputStream(resource);
 			} else {
-				System.out.println("Loading from resources! Resource: " + resource);
+				Logger.debug("Loading from resources! Resource: " + resource);
 				return ResourceUtils.class.getResourceAsStream(resource);
 			}
 			
@@ -46,15 +46,18 @@ public final class ResourceUtils {
 		}
 		
 		@Override
-		public synchronized int read() throws IOException {
+		public int read() {
 			if (!buffer.hasRemaining()) {
 				return -1;
 			}
-			return buffer.get();
+			return buffer.get() & 0xFF;
 		}
 		
 		@Override
-		public synchronized int read(byte[] b, int off, int len) throws IOException {
+		public int read(byte[] b, int off, int len) {
+			if (!buffer.hasRemaining()) {
+				return -1;
+			}
 			len = Math.min(len, buffer.remaining());
 			buffer.get(b, off, len);
 			return len;
@@ -64,6 +67,27 @@ public final class ResourceUtils {
 		public int available() throws IOException {
 			return buffer.remaining();
 		}
+		
+	}
+	
+	public static class ByteBufferOutputStream extends OutputStream {
+		
+		private ByteBuffer buffer;
+		
+		public ByteBufferOutputStream(ByteBuffer buffer) {
+			this.buffer = Objects.requireNonNull(buffer);
+		}
+		
+		@Override
+		public void write(int b) throws IOException {
+			buffer.put((byte) b);	
+		}
+		
+		@Override
+		public void write(byte[] b, int off, int len) throws IOException {
+			buffer.put(b, off, len);
+		}
+		
 	}
 	
 	public static interface ResourceLoader {
@@ -89,54 +113,55 @@ public final class ResourceUtils {
 		return Files.isReadable(Paths.get(path));
 	}
 	
-	public static void InputStreamToBuffer(ByteBuffer buffer, InputStream is) throws IOException {
-		byte[] block = new byte[512];
-		int x;
-		while((x = is.read(block)) != -1) {
-			buffer.put(block, 0, x);
-		}
+	public static ByteBuffer copyInputStream(InputStream in) throws IOException {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		copy(in, baos);
+		ByteBuffer result = ByteBuffer.allocate(baos.size()).order(ByteOrder.nativeOrder()).put(baos.toByteArray());
+		result.flip();
+		return result;
+	}
+	
+	public static ByteBuffer copyInputStreamDirect(InputStream in) throws IOException {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		copy(in, baos);
+		ByteBuffer result = MemoryUtil.memAlloc(baos.size()).put(baos.toByteArray());
+		result.flip();
+		return result;
 	}
 	
 	public static ByteBuffer loadBuffer(String resource) throws IOException {
 		ByteBuffer result = null;
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		InputStream is = LOADER.load(resource);
-		byte[] a = new byte[4096];
-		int x;
-		while((x = is.read(a)) != -1) {
-			baos.write(a, 0, x);
-		}
+		copy(is,baos);
 		byte[] w = baos.toByteArray();
-		result = BufferUtils.createByteBuffer(w.length);
-		result.put(w);
+		result = ByteBuffer.wrap(w);
 		result.flip();
+		is.close();
+		baos.close();
 		return result.slice();
 	}
 	
-	public static FloatBuffer getFloatBuffer(FloatBuffer buffer) {
-		FloatBuffer out = MemoryUtil.memAllocFloat(buffer.capacity());
-		out.put(buffer).flip();
-		
-		return out;
+	public static void loadInto(String resource, OutputStream out) throws IOException {
+		InputStream in = loadStream(resource);
+		copy(in, out);
+		in.close();
 	}
 	
-	public static FloatBuffer getFloatBuffer(float[] array) {
-		FloatBuffer buffer = MemoryUtil.memAllocFloat(array.length);
-		buffer.put(array).flip();
-		return buffer;
+	public static void copy(InputStream from, OutputStream to) throws IOException {
+		int x;
+		byte[] block = new byte[1024];
+		while((x = from.read(block)) != -1) {
+			to.write(block, 0, x);
+		}
 	}
 	
-	public static IntBuffer getIntBuffer(IntBuffer buffer) {
-		IntBuffer out = MemoryUtil.memAllocInt(buffer.capacity());
-		out.put(buffer).flip();
-		
-		return out;
-	}
-	
-	public static IntBuffer getIntBuffer(int[] array) {
-		IntBuffer buffer = MemoryUtil.memAllocInt(array.length);
-		buffer.put(array).flip();
-		return buffer;
+	public static void copy(InputStream from, ByteBuffer to) throws IOException {
+		byte[] block = new byte[1024];
+		int x;
+		while((x = from.read(block)) != -1) {
+			to.put(block, 0, x);
+		}
 	}
 	
 	public static ByteBuffer loadBufferDirect(String resource) throws IOException {
@@ -152,6 +177,8 @@ public final class ResourceUtils {
 		result = MemoryUtil.memAlloc(w.length);
 		result.put(w);
 		result.flip();
+		is.close();
+		baos.close();
 		return result;
 	}
 	
@@ -166,25 +193,12 @@ public final class ResourceUtils {
 		return result.toString();
 	}
 	
-	public static ByteBuffer loadFileBuffer(File file) throws IOException {
-		FileInputStream fis = new FileInputStream(file);
-		ReadableByteChannel rbc = fis.getChannel();
-		ByteBuffer buffer = BufferUtils.createByteBuffer(fis.available());
-		rbc.read(buffer);
-		fis.close();
-		return buffer;
-	}
-	
-	public static ByteBuffer loadFileBufferDirect(File file) throws IOException {
-		FileInputStream fis = new FileInputStream(file);
-		ByteBuffer buffer = MemoryUtil.memAlloc(fis.available());
-		fis.getChannel().read(buffer);
-		fis.close();
-		return buffer;
-	}
-	
 	public static InputStream ByteBufferToInputStream(ByteBuffer buffer) {
 		return new ByteBufferInputStream(buffer);
+	}
+	
+	public static OutputStream OutputStreamToByteBuffer(ByteBuffer buffer) {
+		return new ByteBufferOutputStream(buffer);
 	}
 	
 	public static void copyResource(String res, File output) throws IOException {
@@ -197,6 +211,21 @@ public final class ResourceUtils {
 	public static boolean doesFileExist(File directory, String filename) {
 		if (!directory.isDirectory()) return false;
 		return new File(directory, filename).exists();
+	}
+	
+	public static ImageDecoder decodeImage(ByteBuffer buffer, Class<? extends ImageDecoder> clazz) throws IOException {
+		ImageDecoder decoder = ImageDecoder.getClassDecoder(clazz);
+		decoder.decode(buffer);
+		return decoder;
+	}
+	
+	public static File getCurrentLocation() {
+		return new File(ResourceUtils.class.getProtectionDomain().getCodeSource().getLocation().getFile());
+	}
+	
+	public static String getFilename(String path) {
+		int max = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
+		return path.substring(max + 1);
 	}
 	
 }

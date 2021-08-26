@@ -9,30 +9,64 @@ import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.system.MemoryUtil;
 
-public class RenderableObject {
+import juniorjar35.sunflower3d.Utils.Deleteable;
+
+public class RenderableObject implements Deleteable {
 	
 	private FloatBuffer verts, tc, normals;
 	private IntBuffer indices;
-	boolean init = false;
+	boolean init = false, lighting = true;
 	int vao, vbo, ibo, tbo, nbo, indicesCount, texture;
-	
-	
-	
-	
-	
+
+	public int getVao() {
+		return vao;
+	}
+
+	public int getVbo() {
+		return vbo;
+	}
+
+	public int getIbo() {
+		return ibo;
+	}
+
+	public int getTbo() {
+		return tbo;
+	}
+
+	public int getNbo() {
+		return nbo;
+	}
+
+	public int getIndicesCount() {
+		return indicesCount;
+	}
+
+	public int getTexture() {
+		return texture;
+	}
+
 	public RenderableObject(float[] verts, int[] indices, float[] textureCoords, float[] normals) {
 		this(FloatBuffer.wrap(verts), IntBuffer.wrap(indices), FloatBuffer.wrap(textureCoords), FloatBuffer.wrap(normals));
 	}
 	
+	private static IntBuffer getIntBuffer(IntBuffer buffer) {
+		IntBuffer out = MemoryUtil.memAllocInt(buffer.capacity());
+		out.put(buffer).flip();
+		return out;
+	}
+	
+	private static FloatBuffer getFloatBuffer(FloatBuffer buffer) {
+		FloatBuffer out = MemoryUtil.memAllocFloat(buffer.capacity());
+		out.put(buffer).flip();
+		return out;
+	}
+	
 	public RenderableObject(FloatBuffer verts, IntBuffer indices, FloatBuffer textureCoords, FloatBuffer normals) {
-		this.verts = MemoryUtil.memAllocFloat(verts.capacity());
-		this.verts.put(verts).flip();
-		this.indices = MemoryUtil.memAllocInt(indices.capacity());
-		this.indices.put(indices).flip();
-		this.tc = MemoryUtil.memAllocFloat(textureCoords.capacity());
-		this.tc.put(textureCoords).flip();
-		this.normals = MemoryUtil.memAllocFloat(normals.capacity());
-		this.normals.put(normals).flip();
+		this.verts = getFloatBuffer(verts);
+		this.indices = getIntBuffer(indices);
+		this.tc = getFloatBuffer(textureCoords);
+		this.normals = getFloatBuffer(normals);
 	}
 	
 	private int buffer(FloatBuffer buffer, int size, int index) {
@@ -55,6 +89,14 @@ public class RenderableObject {
 	
 	public boolean initialized() {
 		return init;
+	}
+	
+	public void enableLighting(boolean lightning) {
+		this.lighting = lightning;
+	}
+	
+	public boolean isLightingEnabled() {
+		return this.lighting;
 	}
 	
 	public void init() {

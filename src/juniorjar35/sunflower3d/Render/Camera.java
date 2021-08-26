@@ -3,19 +3,23 @@ package juniorjar35.sunflower3d.Render;
 import java.util.Objects;
 
 import org.joml.Matrix4f;
+import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
 import juniorjar35.sunflower3d.Audio.SoundManager;
+import juniorjar35.sunflower3d.Utils.Maths;
 
 public class Camera {
 	
-	Vector3f pos, rot;
+	private Vector3f pos, rot;
 	
 	private float speed = 0.05f;
 	private float sensitivity = 0.15f;
 	
 	private Matrix4f view = new Matrix4f();
+	
+	private Vector2f mmp = new Vector2f(-9.555E+1f, 8.730E+1f);
 	
 	private Window window;
 	
@@ -53,6 +57,14 @@ public class Camera {
 	
 	private double ox,oy,nx,ny;
 	
+	public void setMaxMinPitchAngles(Vector2f pitch) {
+		this.mmp.set(pitch);
+	}
+	
+	public void setMaxMinPitchAngles(float min, float max) {
+		this.mmp.set(min, max);
+	}
+	
 	void update() {
 		
 		if (!window.isCursorLocked()) return;
@@ -63,14 +75,15 @@ public class Camera {
 		float x = (float) Math.sin(Math.toRadians(rot.y)) * speed;
 		float z = (float) Math.cos(Math.toRadians(rot.y)) * speed;
 		
-		if (window.isKeyDown(GLFW.GLFW_KEY_A)) 			this.pos.add( -z,  0,   x );
-		if (window.isKeyDown(GLFW.GLFW_KEY_D)) 			this.pos.add(  z,  0,  -x );
-		if (window.isKeyDown(GLFW.GLFW_KEY_W)) 			this.pos.add( -x,  0,  -z );
-		if (window.isKeyDown(GLFW.GLFW_KEY_S)) 			this.pos.add(  x,  0,   z );
-		if (window.isKeyDown(GLFW.GLFW_KEY_SPACE)) 		this.pos.add( 0,  speed, 0 );
+		if (window.isKeyDown(GLFW.GLFW_KEY_A)) this.pos.add( -z,  0,   x );
+		if (window.isKeyDown(GLFW.GLFW_KEY_D)) this.pos.add(  z,  0,  -x );
+		if (window.isKeyDown(GLFW.GLFW_KEY_W)) this.pos.add( -x,  0,  -z );
+		if (window.isKeyDown(GLFW.GLFW_KEY_S)) this.pos.add(  x,  0,   z );
+		if (window.isKeyDown(GLFW.GLFW_KEY_SPACE)) this.pos.add( 0,  speed, 0 );
 		if (window.isKeyDown(GLFW.GLFW_KEY_LEFT_SHIFT)) this.pos.add( 0, -speed, 0 );
 		
 		rot.sub((float) (ny - oy) * sensitivity,(float) (nx - ox) * sensitivity, 0 );
+		rot.x = Maths.clamp(rot.x, mmp.x, mmp.y);
 		ox = nx;
 		oy = ny;
 		SoundManager.listenerData(this);

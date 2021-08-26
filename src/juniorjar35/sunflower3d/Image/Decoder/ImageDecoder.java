@@ -3,7 +3,9 @@ package juniorjar35.sunflower3d.Image.Decoder;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-public interface ImageDecoder extends AutoCloseable{
+import juniorjar35.sunflower3d.Utils.Deleteable;
+
+public interface ImageDecoder extends Deleteable {
 	
 	public static ImageDecoder getClassDecoder(Class<? extends ImageDecoder> decoder) {
 		ImageDecoder decoder2 = null;

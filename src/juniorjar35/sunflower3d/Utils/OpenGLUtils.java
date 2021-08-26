@@ -3,7 +3,6 @@ package juniorjar35.sunflower3d.Utils;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
 
 import javax.imageio.ImageIO;
 
@@ -15,7 +14,6 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL14;
-import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL31;
@@ -25,12 +23,13 @@ import org.lwjgl.system.MemoryUtil;
 
 import juniorjar35.sunflower3d.Application;
 import juniorjar35.sunflower3d.Image.Decoder.ImageDecoder;
+import juniorjar35.sunflower3d.Render.Window;
 
 public final class OpenGLUtils {
 	private OpenGLUtils() {};
 	
-	public static GLCapabilities makeContext(long windowHandle) {
-		GLFW.glfwMakeContextCurrent(windowHandle);
+	public static GLCapabilities makeContext(Window window) {
+		GLFW.glfwMakeContextCurrent(window.getWindowHandle());
 		GLCapabilities cap = GL.createCapabilities();
 		return cap;
 	}
@@ -84,33 +83,6 @@ public final class OpenGLUtils {
 		return texture;
 	}
 	
-	public static int loadTextureAsCompressed(ByteBuffer image, Class<? extends ImageDecoder> decoderClass, int filter, int wrap, boolean mipmapping, int mmfilter, float lod) {
-		try (ImageDecoder decoder = ImageDecoder.getClassDecoder(decoderClass)){
-			decoder.decode(image);
-			return loadTextureAsCompressed(decoder, filter, wrap, mipmapping, mmfilter, lod);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-	
-	public static int loadTextureAsCompressed(ImageDecoder decoder, int filter, int wrap, boolean mipmapping, int mmfilter, float lod) {
-		if (getCapabilities().glCompressedTexImage2D == 0) throw new UnsupportedOperationException("Texture compressing is not supported!");
-		int texture = GL11.glGenTextures();
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, wrap);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, wrap);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, filter);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, filter);
-		GL13.glCompressedTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, decoder.getWidth(), decoder.getHeight(), 0, decoder.getData());
-		if (mipmapping) {
-			GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
-			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, mmfilter);
-			GL11.glTexParameterf(GL11.GL_TEXTURE_2D, GL14.GL_TEXTURE_LOD_BIAS, lod);
-		}
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
-		return texture;
-	}
-	
 	public static int loadCubeMap(String[] textureFiles, Class<? extends ImageDecoder> decoderClass) {
 		try(ImageDecoder decoder = ImageDecoder.getClassDecoder(decoderClass)){
 			int texture = GL11.glGenTextures();
@@ -121,7 +93,6 @@ public final class OpenGLUtils {
 				GL11.glTexImage2D(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL11.GL_RGBA, decoder.getWidth(), decoder.getHeight(), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, decoder.getData());
 				decoder.close();
 			}
-			
 			GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
 			GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
 			GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
@@ -133,25 +104,22 @@ public final class OpenGLUtils {
 		}
 	}
 	
-	
-	private static int buffer(FloatBuffer buffer, int size, int index) {
-		int genBuffer = GL15.glGenBuffers();
-		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, genBuffer);
-		GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buffer, GL15.GL_STATIC_DRAW);
-		GL30.glVertexAttribPointer(index, size, GL11.GL_FLOAT, false, 0, 0);
-		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-		return genBuffer;
+	public static void deleteTexture(int texture) {
+		if (GL11.glIsTexture(texture)) {
+			GL11.glDeleteTextures(texture);
+		}
 	}
 	
-	public static int[] generate2DVAO(float[] vertices, float[] textureCoords, int[] out) {
-		out[0] = GL30.glGenVertexArrays();
-		GL30.glBindVertexArray(out[0]);
-		out[1] = buffer(ResourceUtils.getFloatBuffer(vertices), 2, 0);
-		out[2] = buffer(ResourceUtils.getFloatBuffer(vertices), 2, 0);
-		GL30.glBindVertexArray(0);
-		return out;
+	public static void deleteAllTextures() {
+		int f = 0;
+		for (int i = 0; i < 0x4000; i++) {
+			if (f <= 4) break;
+			if (GL11.glIsTexture(i)) {
+				f = 0;
+				GL11.glDeleteTextures(i);
+			} else f++;
+		}
 	}
-	
 	
 	public static Vector3f toOpenGLRGB(Vector3f rgb) {
 		rgb.x = rgb.x / 255f;
@@ -168,15 +136,18 @@ public final class OpenGLUtils {
 	}
 	
 	public static void dumpTextures() {
-		if (System.getSecurityManager() != null) System.getSecurityManager().checkPermission(new RuntimePermission("sunflower3d.opengl.dump.textures"));
 		if (!currentThreadHasContext()) throw new IllegalStateException("Current thread does not have a context!");
 		File directory = new File(Application.getSavesDirectory(), "TextureDumps");
 		directory.mkdir();
-		System.out.println("Dumping textures...");
+		Logger.DEBUG.println("Dumping textures...");
 		int k = 0;
-		for (int i = 0; i < 2048; i++) {
-			if (!GL11.glIsTexture(i)) continue;
+		int f = 0;
+		for (int i = 0; i < 0x4000; i++) {
+			if (f <= 3) break; 
+			if (!GL11.glIsTexture(i)) {f++; continue;}
+			f = 0;
 			GL11.glBindTexture(GL11.GL_TEXTURE_2D, i);
+			Logger.DEBUG.println("Dumping texture " + i);
 			int h = GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_HEIGHT);
 			int w = GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_WIDTH);
 			ByteBuffer pixels = MemoryUtil.memAlloc(4 * w * h);
@@ -204,7 +175,7 @@ public final class OpenGLUtils {
 			}
 			GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
 		}
-		System.out.println("Dumped " + k + " textures!");
+		Logger.DEBUG.println("Dumped " + k + " textures!");
 	}
 	
 	public static String getErrorString(int error) {
@@ -229,6 +200,29 @@ public final class OpenGLUtils {
 			return "Stack underflow";
 		case GL11.GL_OUT_OF_MEMORY:
 			return "Out of memory";
+		default:
+			return "Unknown";
+		}
+	}
+	
+	public static String getFramebufferErrorString(int error) {
+		switch(error){
+		case GL30.GL_FRAMEBUFFER_COMPLETE:
+			return "Complete";
+		case GL30.GL_FRAMEBUFFER_UNDEFINED:
+			return "Undefined";
+		case GL30.GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+			return "Incomplete attachment";
+		case GL30.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+			return "Incomplete missing attachment";
+		case GL30.GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
+			return "Incomplete draw buffer";
+		case GL30.GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
+			return "Incomplete read buffer";
+		case GL30.GL_FRAMEBUFFER_UNSUPPORTED:
+			return "Unsupported";
+		case GL30.GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:
+			return "Incomplete multisample";
 		default:
 			return "Unknown";
 		}

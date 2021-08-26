@@ -16,9 +16,12 @@ import java.util.Objects;
 
 import javax.swing.JOptionPane;
 
+import org.lwjgl.system.Configuration;
 import org.lwjgl.system.Platform;
+import org.lwjgl.system.Pointer;
 
 import juniorjar35.sunflower3d.Audio.SoundManager;
+import juniorjar35.sunflower3d.Utils.Logger;
 import juniorjar35.sunflower3d.Utils.OpenGLUtils;
 
 public final class Application {
@@ -31,14 +34,20 @@ public final class Application {
 	
 	public static void setDebugMode(boolean debug) {
 		DEBUG = debug;
+		Configuration.DEBUG.set(debug);
+		Configuration.DEBUG_FUNCTIONS.set(debug);
+		Configuration.DEBUG_LOADER.set(debug);
+		Configuration.DEBUG_MEMORY_ALLOCATOR.set(debug);
+		Configuration.DEBUG_STACK.set(debug);
+		Configuration.DEBUG_STREAM.set(Logger.DEBUG);
 	}
 	
 	public static boolean isDebugModeEnabled() {
 		return DEBUG;
 	}
 	
-	public static String getLibraryInfo() {
-		return "Sunflower3D 1.4.2";
+	public static String getLibraryVersion() {
+		return "Sunflower3D 1.5";
 	}
 	
 	public static File getUserdataDirectory() {
@@ -63,12 +72,20 @@ public final class Application {
 		Objects.requireNonNull(name);
 		if (name.length() <= 0) throw new IllegalArgumentException("Name length");
 		APPNAME = name;
+		getSavesDirectory();
+		getNativeLibraryDirectory();
 	}
 	
 	public static File getSavesDirectory() {
 		File directory = new File(getUserdataDirectory(), APPNAME);
 		if (!directory.exists() || !directory.isDirectory()) directory.mkdir();
 		return directory;
+	}
+	
+	public static File getNativeLibraryDirectory() {
+		File dir = new File(getSavesDirectory(), "NativeLibraries");
+		if (!dir.exists() || !dir.isDirectory()) dir.mkdir();
+		return dir;
 	}
 	
 	public static void exit(int status) {
@@ -84,8 +101,7 @@ public final class Application {
 	}
 	
 	public static boolean is64bit() {
-		String arch = System.getProperty("os.arch");
-		return arch.contains("64") || arch.startsWith("armv8");
+		return Pointer.BITS64;
 	}
 	
 	private static void causedBy(BufferedWriter writer, Throwable cause) throws IOException {
@@ -114,16 +130,19 @@ public final class Application {
 			if (!crashes.exists() || !crashes.isDirectory()) crashes.mkdir();
 			File crashReport = new File(crashes, "CrashReport-[" + getTimeDateFileSafe() + "].log");
 			BufferedWriter writer = new BufferedWriter(new FileWriter(crashReport));
-			writer.write("Crash report. Date: " + getTime() + "\n");
-			writer.write("Library: " + getLibraryInfo() + (DEBUG ? " (DEBUG ENABLED)" : "") + "\n");
+			writer.write("Date: " + getTime() + "\n");
+			writer.write("Version: " + getLibraryVersion() + (DEBUG ? " (DEBUG ENABLED)" : "") + "\n");
 			writer.write("OS: " + System.getProperty("os.name") + " (" + (is64bit() ? "64-bit" : "32-bit") + ")\n");
 			writer.write("Java version: " + System.getProperty("java.version") + "\n");
 			writer.write("Java vendor: " + System.getProperty("java.vendor") + "\n");
 			writer.write("\n");
+			writer.write("CPU Model: " + "\n");
+			writer.write("CPU Vendor: "  + "\n");
 			writer.write("Cores available: " + Runtime.getRuntime().availableProcessors() + "\n");
 			writer.write("Free JVM memory: " + (Runtime.getRuntime().freeMemory() / 1024) / 1024 + " MB\n");
 			writer.write("Max JVM memory: " + (Runtime.getRuntime().maxMemory() / 1024) / 1024 + " MB\n");
 			writer.write("Total JVM memory: " + (Runtime.getRuntime().totalMemory() / 1024) / 1024 + " MB\n");
+			writer.write("Used JVM memory: " + ((Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1024) / 1024 + " MB\n");
 			writer.write("\n");
 			writer.write("OpenGL Renderer: " + (GPU != null ? GPU[0] : "NULL") + "\n");
 			writer.write("OpenGL Vendor: " + (GPU != null ? GPU[1] : "NULL") + "\n");
@@ -148,7 +167,7 @@ public final class Application {
 						writer.write(string);
 						writer.newLine();
 					}
-				} catch(Exception e) {
+				} catch(Throwable e) {
 					writer.write("Failed to retrive details for this section!\n");
 					writer.flush();
 				};
@@ -159,7 +178,8 @@ public final class Application {
 			
 			writer.flush();
 			writer.close();
-			OpenGLUtils.deleteContext();
+			crashReport.setReadOnly();
+			crashReport.setWritable(false);
 			System.err.println("--------------GAME CRASH--------------");
 			System.err.println("Crash report at: " + crashReport.getAbsolutePath());
 			System.err.print("Crash cause: ");
@@ -169,7 +189,7 @@ public final class Application {
 			if(JOptionPane.showConfirmDialog(null, "The game has crashed! Would you like to open the crash report", "Game crash", JOptionPane.YES_NO_OPTION, JOptionPane.ERROR_MESSAGE) == JOptionPane.YES_OPTION) {
 				openFile(crashReport);
 			}
-			
+			OpenGLUtils.deleteContext();
 		} catch (IOException e) {
 		} finally {
 			forceExit(-1);

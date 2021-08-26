@@ -3,13 +3,13 @@ package juniorjar35.sunflower3d.Audio;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.openal.AL;
 import org.lwjgl.openal.AL10;
-import org.lwjgl.openal.AL11;
 import org.lwjgl.openal.ALC;
 import org.lwjgl.openal.ALC10;
 import org.lwjgl.openal.ALCCapabilities;
@@ -21,15 +21,11 @@ import org.lwjgl.system.MemoryUtil;
 import juniorjar35.sunflower3d.Render.Camera;
 
 public final class SoundManager {
-	
-	private static long DEVICE = 0L, CONTEXT = 0L;
+	protected static long DEVICE = 0L, CONTEXT = 0L;
 	private static boolean INIT = false;
 	
 	protected static List<SoundFile> SOUNDFILES = new CopyOnWriteArrayList<SoundFile>();
-	private static List<Integer> SOURCES = new CopyOnWriteArrayList<Integer>();
-	
-	private static ALCCapabilities ALCC = null;
-	private static ALCapabilities C_AL = null;
+	protected static List<SoundObject> SOURCES = new CopyOnWriteArrayList<SoundObject>();
 	
 	public static void openDevice(String audioDevice) {
 		if (INIT) close();
@@ -38,18 +34,19 @@ public final class SoundManager {
 		if (DEVICE == 0L) throw new IllegalArgumentException("Unable to find \"" + audioDevice + "\" output device!");
 		CONTEXT = ALC10.alcCreateContext(DEVICE, (int[]) null);
 		ALC10.alcMakeContextCurrent(CONTEXT);
-		ALCC = ALC.createCapabilities(DEVICE); 
-		C_AL = AL.createCapabilities(ALCC);
-		
+		ALCCapabilities ALCC = ALC.createCapabilities(DEVICE); 
+		ALCapabilities C_AL = AL.createCapabilities(ALCC);
 		if (!ALCC.OpenALC11) throw new IllegalStateException("ALC 1.1 is not supported!");
 		if (!C_AL.OpenAL11) throw new IllegalStateException("AL 1.1 is not supported!");
-		
 		INIT = true;
 	}
 	 
 	public static void close() {
 		if (!INIT) return;
-		stopAllSounds();
+		deleteSounds(SOURCES.toArray(new SoundObject[0]));
+		for (SoundFile file : SOUNDFILES) {
+			file.delete();
+		}
 		ALC10.alcDestroyContext(CONTEXT);
 		CONTEXT = 0;
 		ALC10.alcCloseDevice(DEVICE);
@@ -61,58 +58,75 @@ public final class SoundManager {
 		return INIT;
 	}
 	
-	public static void stopAllSounds() {
-		for (int source : SOURCES) {
-			AL10.alSourceStop(source);
-			AL10.alDeleteSources(source);
-		}
-		SOURCES.clear();
+	public static SoundObject newSoundObject(SoundFile file, SoundProperties properties) {
+		if (!INIT) return null;
+		return new SoundObject(file.buffer, properties);
 	}
 	
-	public static void stopSound(int source) {
-		if (AL10.alIsSource(source) && AL10.alGetSourcei(source, AL10.AL_SOURCE_STATE) != AL10.AL_STOPPED) {
-			AL10.alSourceStop(source);
-			AL10.alDeleteSources(source);
-		}
+	public static SoundObject newSoundObject(SoundFile file) {
+		if (!INIT) return null;
+		return new SoundObject(file.buffer, new SoundProperties());
 	}
 	
-	public static void pauseSound(int source) {
-		if (AL10.alIsSource(source) && AL10.alGetSourcei(source, AL10.AL_SOURCE_STATE) != AL10.AL_PAUSED) {
-			AL10.alSourcePause(source);
+	public static void stopSounds(SoundObject... objects) {
+		if (!INIT) return;
+		for (SoundObject object : objects) {
+			object.stopSound();
 		}
 	}
 	
-	public static void resumeSound(int source) {
-		if (AL10.alIsSource(source) && AL10.alGetSourcei(source, AL10.AL_SOURCE_STATE) == AL10.AL_PAUSED) {
-			AL10.alSourcePlay(source);
+	public static void stopSound(SoundObject object) {
+		if (!INIT) return;
+		object.stopSound();
+	}
+	
+	public static void pauseSounds(SoundObject... objects) {
+		if (!INIT) return;
+		for (SoundObject object : objects) {
+			object.pauseSound();
 		}
 	}
 	
-	public static int playSound(SoundFile sound, SoundProperties properties) {
-		int source = AL10.alGenSources();
-		
-		AL10.alSourcei(source, AL10.AL_BUFFER, sound.buffer);
-		AL10.alSource3f(source, AL10.AL_POSITION, properties.pos.x, properties.pos.y, properties.pos.z);
-		AL10.alSourcef(source, AL11.AL_GAIN, properties.gain);
-		AL10.alSourcef(source, AL10.AL_PITCH, properties.pitch);
-		AL10.alSource3f(source, AL10.AL_VELOCITY, properties.vel.x, properties.vel.y, properties.vel.z);
-		AL10.alSourcei(source, AL10.AL_LOOPING, properties.looped ? AL10.AL_TRUE : AL10.AL_FALSE);
-		AL10.alSourcePlay(source);
-		
-		return source;
+	public static void pauseSound(SoundObject object) {
+		if (!INIT) return;
+		object.pauseSound();
 	}
 	
-	public static void modifySound(int source, SoundProperties properties) {
-		
-		if (AL10.alIsSource(source)) {
-			AL10.alSourcei(source, AL10.AL_BUFFER, source);
-			AL10.alSource3f(source, AL10.AL_POSITION, properties.pos.x, properties.pos.y, properties.pos.z);
-			AL10.alSourcef(source, AL11.AL_GAIN, properties.gain);
-			AL10.alSourcef(source, AL10.AL_PITCH, properties.pitch);
-			AL10.alSource3f(source, AL10.AL_VELOCITY, properties.vel.x, properties.vel.y, properties.vel.z);
-			AL10.alSourcei(source, AL10.AL_LOOPING, properties.looped ? AL10.AL_TRUE : AL10.AL_FALSE);
+	public static void playSounds(SoundObject... objects) {
+		if (!INIT) return;
+		for (SoundObject object : objects) {
+			object.playSound();
 		}
-		
+	}
+	
+	public static void playSound(SoundObject object) {
+		if (!INIT) return;
+		object.playSound();
+	}
+	
+	public static void modifySounds(SoundProperties properties, SoundObject... objects) {
+		if (!INIT) return;
+		Objects.requireNonNull(properties);
+		for (SoundObject object : objects) {
+			object.setSoundProperties(properties);
+		}
+	}
+	
+	public static void modifySound(SoundObject object, SoundProperties properties) {
+		if (!INIT) return;
+		object.setSoundProperties(properties);
+	}
+	
+	public static void deleteSounds(SoundObject... objects) {
+		if (!INIT) return;
+		for (SoundObject object : objects) {
+			object.delete();
+		}
+	}
+	
+	public static void deleteSound(SoundObject object) {
+		if (!INIT) return;
+		object.delete();
 	}
 	
 	public static void listenerData(Camera cam) {
@@ -142,14 +156,12 @@ public final class SoundManager {
 	}
 	
 	public static String[] getAllOutputDevices() {
-		if (ALCC.ALC_ENUMERATE_ALL_EXT) throw new IllegalStateException("ALC_ENUMERATE_ALL_EXT extension is not present!");
+		if (!ALC10.alcIsExtensionPresent(DEVICE, "ALC_ENUMERATE_ALL_EXT")) throw new IllegalStateException("ALC_ENUMERATE_ALL_EXT extension is not present!");
 		long address = AL10.nalGetString(EnumerateAllExt.ALC_ALL_DEVICES_SPECIFIER);
 		ByteBuffer buffer = MemoryUtil.memByteBufferNT2(address);
 		byte[] bytes = new byte[buffer.capacity()];
 		buffer.get(bytes);
 		return new String(bytes).split("[" + '\u0000' + "]{2}")[0].split("[" + '\u0000' + "]");
 	}
-	
-	
 	
 }

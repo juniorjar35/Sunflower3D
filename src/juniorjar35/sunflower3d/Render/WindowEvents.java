@@ -14,4 +14,5 @@ public interface WindowEvents {
 	void resize(int width, int height);
 	void position(int x, int y);
 	void FPS(int fps);
+	void close();
 }

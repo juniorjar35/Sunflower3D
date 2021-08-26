@@ -4,6 +4,8 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import juniorjar35.sunflower3d.Application;
+
 public final class MainThreadScheduler {
 	private MainThreadScheduler() {};
 	
@@ -17,13 +19,19 @@ public final class MainThreadScheduler {
 		while((task = TASKS.poll()) != null) {
 			try {
 				task.run();
-			} catch(Exception e) {};
+			} catch(Exception e) {
+				Application.stop(e);
+			};
 		}
 	}
 	
 	public static void schedule(Runnable task) {
 		synchronized (lock) {
 			Objects.requireNonNull(task);
+			if (Utils.isMainThread()) {
+				task.run();
+				return;
+			}
 			TASKS.add(task);
 		}
 	}

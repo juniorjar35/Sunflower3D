@@ -24,11 +24,9 @@ public final class Utils {
 	
 	public static void traceback() {
 		StackTraceElement[] ste = Thread.currentThread().getStackTrace();
-		System.out.println("----------TRACEBACK----------");
 		for (int i = 2; i < ste.length; i++) {
-			System.out.println(ste[i].toString());
+			System.out.println("\tat " + ste[i].toString());
 		}
-		System.out.println("----------TRACEBACK----------");
 	}
 	
 	public static String toBase16(byte[] bytes) {

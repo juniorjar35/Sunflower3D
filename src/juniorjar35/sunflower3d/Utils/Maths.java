@@ -23,9 +23,9 @@ public class Maths {
 	}
 	
 	public static Vector3f clampVector3f(Vector3f value, Vector3f min, Vector3f max) {
-		value.x = Maths.clamp(value.x, min.x, max.x);
-		value.y = Maths.clamp(value.y, min.y, max.y);
-		value.z = Maths.clamp(value.z, min.z, max.z);
+		value.x = clamp(value.x, min.x, max.x);
+		value.y = clamp(value.y, min.y, max.y);
+		value.z = clamp(value.z, min.z, max.z);
 		return value;
 	}
 	
