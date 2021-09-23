@@ -12,8 +12,9 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 import org.lwjgl.system.MemoryUtil;
 
 import juniorjar35.sunflower3d.Utils.ResourceUtils;
+import juniorjar35.sunflower3d.Utils.ResourceUtils.ByteBufferInputStream;
 
-public class JavaAudioDecoder implements AudioDecoder {
+public class JavaAudioDecoder extends AbstractAudioDecoder {
 	
 	private int frmt, rate;
 	private ByteBuffer buffer;
@@ -24,12 +25,12 @@ public class JavaAudioDecoder implements AudioDecoder {
 	public void delete() {
 		if (init) { MemoryUtil.memFree(buffer); init = false;}
 	}
-
+	
 	@Override
-	public void decode(ByteBuffer buffer) throws IOException {
+	public void decode(ByteBuffer in) throws IOException {
 		delete();
 		try {
-			AudioInputStream ais = AudioSystem.getAudioInputStream(new BufferedInputStream(ResourceUtils.ByteBufferToInputStream(buffer)));
+			AudioInputStream ais = AudioSystem.getAudioInputStream(new BufferedInputStream(new ByteBufferInputStream(in)));
 			this.buffer = ResourceUtils.copyInputStreamDirect(ais);
 			AudioFormat format = ais.getFormat();
 			if (format.getSampleSizeInBits() == 8) { 

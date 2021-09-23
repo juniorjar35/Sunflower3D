@@ -6,7 +6,7 @@ import java.nio.ByteBuffer;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryUtil;
 
-public class STBImageDecoder implements ImageDecoder {
+public class STBImageDecoder extends AbstractImageDecoder {
 	
 	private boolean init = false;
 	private int w,h;
@@ -24,11 +24,11 @@ public class STBImageDecoder implements ImageDecoder {
 
 	@Override
 	public String getType() {
-		return "MID";
+		return "STB";
 	}
 
 	@Override
-	public ByteBuffer getData() {
+	public ByteBuffer getPixels() {
 		return data;
 	}
 	@Override

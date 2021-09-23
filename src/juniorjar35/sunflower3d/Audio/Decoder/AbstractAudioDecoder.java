@@ -7,15 +7,15 @@ import org.lwjgl.openal.AL10;
 
 import juniorjar35.sunflower3d.Utils.Deleteable;
 
-public interface AudioDecoder extends Deleteable {
+public abstract class AbstractAudioDecoder implements Deleteable {
 	
 	public static final int MONO8 = AL10.AL_FORMAT_MONO8,
 							STEREO8 = AL10.AL_FORMAT_STEREO8,
 							MONO16 = AL10.AL_FORMAT_MONO16,
 							STEREO16 = AL10.AL_FORMAT_STEREO16;
 	
-	public static AudioDecoder getDecoder(Class<? extends AudioDecoder> decoderClass) {
-		AudioDecoder decoder = null;
+	public static AbstractAudioDecoder getDecoder(Class<? extends AbstractAudioDecoder> decoderClass) {
+		AbstractAudioDecoder decoder = null;
 		
 		try {
 			decoder = decoderClass.newInstance();
@@ -26,10 +26,10 @@ public interface AudioDecoder extends Deleteable {
 		
 	}
 	
-	void decode(ByteBuffer buffer) throws IOException;
-	String getType();
-	int getFormat();
-	int getSampleRate();
-	ByteBuffer getPCM();
-	boolean initialized();
+	public abstract void decode(ByteBuffer buffer) throws IOException;
+	public abstract String getType();
+	public abstract int getFormat();
+	public abstract int getSampleRate();
+	public abstract ByteBuffer getPCM();
+	public abstract boolean initialized();
 }

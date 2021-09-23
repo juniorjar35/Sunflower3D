@@ -10,7 +10,7 @@ import org.lwjgl.system.MemoryUtil;
 
 import juniorjar35.sunflower3d.Utils.ResourceUtils;
 
-public class JavaImageDecoder implements ImageDecoder {
+public class JavaImageDecoder extends AbstractImageDecoder {
 	
 	private ByteBuffer buffer;
 	private boolean init = false;
@@ -57,7 +57,7 @@ public class JavaImageDecoder implements ImageDecoder {
 	}
 
 	@Override
-	public ByteBuffer getData() {
+	public ByteBuffer getPixels() {
 		return this.buffer;
 	}
 

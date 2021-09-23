@@ -8,7 +8,7 @@ import org.lwjgl.stb.STBVorbis;
 import org.lwjgl.stb.STBVorbisInfo;
 import org.lwjgl.system.MemoryUtil;
 
-public class OGG implements AudioDecoder {
+public class OGG extends AbstractAudioDecoder {
 	
 	private boolean init = false;
 	private ByteBuffer pcm;
