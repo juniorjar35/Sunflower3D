@@ -8,4 +8,3 @@
  4. [OpenAL](https://openal.org/)
  5. [OpenGL](https://www.opengl.org//)
  6. [STB](https://github.com/nothings/stb) (optional)
- 7. [xxHash](https://github.com/Cyan4973/xxHash) (optional)
